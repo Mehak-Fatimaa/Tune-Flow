@@ -35,7 +35,7 @@ def update_date_time():
 # Function to add songs to the list
 def add_song():
     songs = filedialog.askopenfilenames(
-        initialdir='E:/JUW/Sec sem/Data Structures/Project/iqra/Semester2/songs',
+        initialdir='E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs',
         title='Add Music',
         filetypes=(('MP3 Files', '*.mp3'),)
     )
@@ -86,7 +86,7 @@ def open_playing_window(song_index):
 
     # Function to play the song in the new window
     def play_song():
-        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/iqra/Semester2/songs', current_song))
+        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', current_song))
         pygame.mixer.music.play(loops=0)
 
     # Function to stop the current song
@@ -114,7 +114,7 @@ def open_playing_window(song_index):
             song_name_label.config(text=next_song)
             song_list.selection_clear(0, tk.END)  # Clear previous selection
             song_list.selection_set(current_song_index)  # Set new selection
-            pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/iqra/Semester2/songs', next_song))
+            pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', next_song))
             pygame.mixer.music.play(loops=0)
         else:
             current_song_index -= 1  # Stay on the last song
@@ -129,7 +129,7 @@ def open_playing_window(song_index):
             song_name_label.config(text=previous_song)
             song_list.selection_clear(0, tk.END)  # Clear previous selection
             song_list.selection_set(current_song_index)  # Set new selection
-            pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/iqra/Semester2/songs', previous_song))
+            pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', previous_song))
             pygame.mixer.music.play(loops=0)
         else:
             current_song_index += 1  # Stay on the first song
@@ -139,7 +139,7 @@ def open_playing_window(song_index):
     album_art_frame.pack(pady=10, padx=20, fill=tk.X)
 
     # Set your fixed album art path
-    fixed_album_art_path = 'E:/JUW/Sec sem/Data Structures/Project/iqra/Semester2/images.png'  # Update path as needed
+    fixed_album_art_path = 'E:/JUW/Sec sem/Data Structures/Project/Tune Flow/images.png'  # Update path as needed
 
     # Check if the file exists before loading
     if os.path.exists(fixed_album_art_path):
