@@ -65,12 +65,21 @@ def open_playing_window(song_index):
         return  # Exit if the index is out of bounds
     
     playing_window = tk.Toplevel(root)
-    playing_window.title("Now Playing")
+    playing_window.title("Playing")
     playing_window.geometry("660x550")
     playing_window.config(bg='#2e2e2e')  # Dark background
 
     current_song = song_list.get(song_index).split('  |  ')[0]  # Get the currently selected song name
     current_song_label.config(text=f"Now Playing: {current_song}")
+
+    # Function to handle window close
+    def on_close():
+        pygame.mixer.music.stop()  # Stop the music
+        playing_window.destroy()  # Close the window
+
+    # Bind the on_close function to the window close event
+    playing_window.protocol("WM_DELETE_WINDOW", on_close)
+
 
     # Initialize the current song index for next/previous functionality
     current_song_index = song_index
