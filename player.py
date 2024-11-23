@@ -17,9 +17,29 @@ root.config(bg='#2e2e2e')  # Dark background
 # Set the font for the entire application
 font_style = ("Arial", 12)
 
+# File to save song list
+song_list_file = 'song_list.txt'
+
 # Song listbox with a dark background and light text for contrast
 song_list = tk.Listbox(root, width=80, bg='#1e1e1e', fg='white', selectmode=tk.SINGLE, font=font_style)
 song_list.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
+
+# Function to save the song list to the file
+def save_song_list():
+    with open(song_list_file, 'w') as file:
+        for i in range(song_list.size()):
+            file.write(song_list.get(i) + '\n') 
+            
+# Function to load the saved song list from the file
+def load_song_list():
+    if os.path.exists(song_list_file):
+        with open(song_list_file, 'r') as file:
+            songs = file.readlines()
+            for song in songs:
+                song_list.insert(tk.END, song.strip())  # Insert into the same Listbox
+
+# Load the song list from the file when the app starts
+load_song_list()
 
 # Current song label
 current_song_label = tk.Label(root, text="Now Playing: None", bg='#2e2e2e', fg='white', font=font_style)
@@ -28,8 +48,6 @@ current_song_label.pack(pady=5)
 # Function to update date and time label
 def update_date_time():
     now = datetime.now()
-
-    
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 # Function to add songs to the list
@@ -43,19 +61,24 @@ def add_song():
         for song in songs:
             song_name = os.path.basename(song)  # Get only the file name
             song_add_time = update_date_time()  # Get the current date and time
-            song_list.insert(tk.END, f"{song_name}  |  Added on: {song_add_time}")  # Insert song name with date and time
+            # Insert song name with date and time
+            song_list.insert(tk.END, f"{song_name}  |  Added on: {song_add_time}")  
         messagebox.showinfo("Success", "Songs added successfully!")
+    save_song_list()  # save updated list
 
 # Function to remove the selected song from the list
 def remove_song():
     selected_song_index = song_list.curselection()
     if selected_song_index:
-        song_name = song_list.get(selected_song_index)  # Get the selected song name
+        # Get the selected song name
+        song_name = song_list.get(selected_song_index)  
         confirm = messagebox.askyesno("Confirm Deletion", f"Do you really want to delete '{song_name}'?")
         if confirm:  # If the user confirms, remove the song
             song_list.delete(selected_song_index)
-            current_song_label.config(text="Now Playing: None")  # Reset label if the song is removed
+            # Reset label if the song is removed
+            current_song_label.config(text="Now Playing: None")  
             messagebox.showinfo("Removed", "Song removed from the list.")
+            save_song_list()
     else:
         messagebox.showwarning("Warning", "Select a song to remove.")
 
