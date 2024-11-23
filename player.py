@@ -131,31 +131,31 @@ def open_playing_window(song_index):
     def play_next_song():
         nonlocal current_song_index
         current_song_index += 1
-        if current_song_index < song_list.size():
-            next_song = song_list.get(current_song_index).split('  |  ')[0]
-            current_song_label.config(text=f"Now Playing: {next_song}")
-            song_name_label.config(text=next_song)
-            song_list.selection_clear(0, tk.END)  # Clear previous selection
-            song_list.selection_set(current_song_index)  # Set new selection
-            pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', next_song))
-            pygame.mixer.music.play(loops=0)
-        else:
-            current_song_index -= 1  # Stay on the last song
+        if current_song_index >= song_list.size():
+            # Agr first song hai tu last pr chly jyen
+            current_song_index = 0  
+        next_song = song_list.get(current_song_index).split('  |  ')[0]
+        current_song_label.config(text=f"Now Playing: {next_song}")
+        song_name_label.config(text=next_song)
+        song_list.selection_clear(0, tk.END)  # Clear previous selection
+        song_list.selection_set(current_song_index)  # Set new selection
+        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', next_song))
+        pygame.mixer.music.play(loops=0)
 
     # Function to play the previous song
     def play_previous_song():
         nonlocal current_song_index
         current_song_index -= 1
-        if current_song_index >= 0:
-            previous_song = song_list.get(current_song_index).split('  |  ')[0]
-            current_song_label.config(text=f"Now Playing: {previous_song}")
-            song_name_label.config(text=previous_song)
-            song_list.selection_clear(0, tk.END)  # Clear previous selection
-            song_list.selection_set(current_song_index)  # Set new selection
-            pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', previous_song))
-            pygame.mixer.music.play(loops=0)
-        else:
-            current_song_index += 1  # Stay on the first song
+        if current_song_index < 0:
+            # Agr last song hai tu first pr chly jyen
+            current_song_index = song_list.size()-1  
+        previous_song = song_list.get(current_song_index).split('  |  ')[0]
+        current_song_label.config(text=f"Now Playing: {previous_song}")
+        song_name_label.config(text=previous_song)
+        song_list.selection_clear(0, tk.END)  # Clear previous selection
+        song_list.selection_set(current_song_index)  # Set new selection
+        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', previous_song))
+        pygame.mixer.music.play(loops=0)
 
     # Album art container
     album_art_frame = tk.Frame(playing_window, bg='black', width=400, height=200)
