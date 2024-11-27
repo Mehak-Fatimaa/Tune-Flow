@@ -3,16 +3,24 @@ from tkinter import filedialog, messagebox
 import pygame
 import os
 from datetime import datetime
-from PIL import Image, ImageTk  # Import for handling images
+from PIL import Image, ImageTk
+import numpy as np
+import threading
+from pydub import AudioSegment
+import time
+import random
 
 # Initialize the pygame mixer
 pygame.mixer.init()
 
+# App settings
+ALBUM_ART_PATH = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\img.jpg"  
+
 # Initialize the main app window
 root = tk.Tk()
 root.title('Music Player')
-root.geometry('600x530')
-root.config(bg='#2e2e2e')  # Dark background
+root.geometry('600x600') # widh X height 
+root.config(bg='#2b2b2b')
 
 # Set the font for the entire application
 font_style = ("Arial", 12)
@@ -21,13 +29,14 @@ font_style = ("Arial", 12)
 song_list_file = 'song_list.txt'
 
 # Song listbox with a dark background and light text for contrast
-song_list = tk.Listbox(root, width=80, bg='#1e1e1e', fg='white', selectmode=tk.SINGLE, font=font_style)
+song_list = tk.Listbox(root, width=80, height=15, bg='#1e1e1e', fg='white', selectmode=tk.SINGLE, font=font_style)
 song_list.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
 # Function to save the song list to the file
 def save_song_list():
     with open(song_list_file, 'w') as file:
         for i in range(song_list.size()):
+            # hr element ko file m likhngy then line break 
             file.write(song_list.get(i) + '\n') 
             
 # Function to load the saved song list from the file
@@ -35,6 +44,7 @@ def load_song_list():
     if os.path.exists(song_list_file):
         with open(song_list_file, 'r') as file:
             songs = file.readlines()
+            # print(songs) 
             for song in songs:
                 song_list.insert(tk.END, song.strip())  # Insert into the same Listbox
 
@@ -42,58 +52,275 @@ def load_song_list():
 load_song_list()
 
 # Current song label
-current_song_label = tk.Label(root, text="Now Playing: None", bg='#2e2e2e', fg='white', font=font_style)
-current_song_label.pack(pady=5)
+current_song_label = tk.Label(root, text="Now Playing: None", bg='#2b2b2b', fg='white', font=("Arial", 14))
+current_song_label.pack(pady=10)
 
 # Function to update date and time label
 def update_date_time():
     now = datetime.now()
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
+# designing buttons
+def style_button(button, color="#4CAF50", hover_color="#45a049"):
+    button.config(
+        bg=color,                     # Button background color
+        fg="white",                   # Button text color
+        font=("Arial", 12, "bold"),   # Font style
+        relief="flat",                # Flat button look
+        activebackground=hover_color, # Hover background color
+        activeforeground="white",     # Hover text color
+        padx=10,                      # Horizontal padding
+        pady=5                        # Vertical padding
+    )
+
 # Function to add songs to the list
 def add_song():
     songs = filedialog.askopenfilenames(
-        initialdir='E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs',
+        initialdir='E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs/',
         title='Add Music',
         filetypes=(('MP3 Files', '*.mp3'),)
     )
-    if songs:  # Check if any songs were selected
+   # Check karna agar user ne koi song select kiya hai
+    if songs:
+        # Har selected song ke liye loop
         for song in songs:
-            song_name = os.path.basename(song)  # Get only the file name
-            song_add_time = update_date_time()  # Get the current date and time
-            # Insert song name with date and time
-            song_list.insert(tk.END, f"{song_name}  |  Added on: {song_add_time}")  
+            song_name = os.path.basename(song)  # Sirf file ka naam lena, path nahi
+            song_add_time = update_date_time()  # Current date aur time 
+            # Song ke saath date aur time add karna aur Listbox me dikhana
+            song_list.insert(tk.END, f"{song_name}  |  Added on: {song_add_time}")
+        # Success message dikhana
         messagebox.showinfo("Success", "Songs added successfully!")
-    save_song_list()  # save updated list
+    # Updated list ko save karna file me
+    save_song_list()
 
-# Function to remove the selected song from the list
+# remove song
 def remove_song():
+    # Selected song ka index Listbox se
     selected_song_index = song_list.curselection()
+    # Check karna agar koi song select kiya hai
     if selected_song_index:
-        # Get the selected song name
-        song_name = song_list.get(selected_song_index)  
+        # Selected song ka naam
+        song_name = song_list.get(selected_song_index)
+        # Confirmation popup
         confirm = messagebox.askyesno("Confirm Deletion", f"Do you really want to delete '{song_name}'?")
-        if confirm:  # If the user confirms, remove the song
+        if confirm:  
+            # Song ko Listbox se delete
             song_list.delete(selected_song_index)
-            # Reset label if the song is removed
-            current_song_label.config(text="Now Playing: None")  
+            # Current song label ko reset
+            current_song_label.config(text="Now Playing: None")
+            # Success message
             messagebox.showinfo("Removed", "Song removed from the list.")
+            # Updated list ko file me save
             save_song_list()
     else:
+        # Warning agar koi song select nahi kiya
         messagebox.showwarning("Warning", "Select a song to remove.")
 
+# Global variable to track playback state
+is_paused = False
+
+# Function to visualize beats
+def visualize_beats(canvas, song_path, background_image):
+    global is_paused
+    try:
+        # Song ko pydub se load karna
+        song = AudioSegment.from_file(song_path)  # File path se audio load
+        frame_rate = song.frame_rate  # Audio ka frame rate lena
+        samples = np.array(song.get_array_of_samples())  # Samples ko numpy array me convert karna
+        chunk_size = 1024  # Ek chunk ka size (samples ka)
+
+        # Bar visualization ke parameters
+        num_bars = canvas.winfo_width() // 20  # Canvas ki width ke mutabiq number of bars
+        bar_height = canvas.winfo_height()  # Canvas ki height
+        max_amplitude = np.max(np.abs(samples))  # Max amplitude calculate karna
+        max_bar_height = 800  # Ek bar ki max height (pixels me)
+
+        # Bars ko update karne ka function
+        def update_bars():
+            # Visualization tabhi chalega jab music playing ho
+            if pygame.mixer.music.get_busy():
+                # Agar paused nahi hai tabhi bars move karengi
+                if not is_paused:
+                    pos = pygame.mixer.music.get_pos()  # Current position (milliseconds me)
+                    current_sample = int((pos / 1000) * frame_rate)  # Milliseconds ko sample index me convert karna
+
+                    # Current chunk lena aur uska amplitude calculate karna
+                    chunk = samples[current_sample:current_sample + chunk_size]
+                    amplitude = np.abs(chunk).mean() / max_amplitude  # Normalize amplitude
+
+                    # Canvas clear karna hr frame pr aur bars ko redraw karna
+                    canvas.delete("all")
+                    if background_image:
+                        canvas.create_image(0, 0, anchor=tk.NW, image=background_image)  # Background image draw karna
+
+                    bar_width = canvas.winfo_width() // num_bars  # Har bar ki width
+                    for i in range(num_bars):
+                        # Dynamic amplitude scaling
+                        amplitude_factor = amplitude * (i + 1) / num_bars
+                        bar_length = int(amplitude_factor * max_bar_height)
+                        bar_length = min(bar_length, max_bar_height)  # Bar ki height ko cap karna
+
+                        # Gradient color lena
+                        color = get_gradient_color(amplitude, i)
+
+                        # Bar ki position aur drawing
+                        x_position = i * (bar_width + 3)
+                        canvas.create_rectangle(
+                            x_position, bar_height - bar_length, x_position + bar_width, bar_height,
+                            fill=color, outline=""  # Outline remove karna
+                        )
+
+            # Function ko 50ms ke baad dobara call karna
+            canvas.after(50, update_bars)
+
+        # Visualization start karna
+        update_bars()
+
+    except Exception as e:
+        print(f"Visualization error: {e}")  # Agar error aaye toh print karna
+
+# # Function to calculate gradient colors
+# def get_gradient_color(amplitude, index):
+#     # Scale the amplitude (0 to 1 range)
+#     amplitude_scaled = min(1, amplitude)  # Clamp the amplitude to a maximum of 1
+
+#     # Electric Blue
+#     if index < 10:  # Start of the gradient
+#         red = int(0)  # No red at the start
+#         green = int(50 + (150 * amplitude_scaled))  # Vivid green for blue tone
+#         blue = int(255 * amplitude_scaled)  # Strong blue intensity
+
+#     # Transition to Vibrant Magenta
+#     elif index < 20:  # Transition phase
+#         red = int(255 * amplitude_scaled)  # Bright red emerges
+#         green = int(0)  # Green reduces
+#         blue = int(255 * amplitude_scaled)  # Blue remains vibrant
+
+#     # Magenta to Cyan Tint
+#     else:  # End of the gradient
+#         red = int(0)  # Red fades away
+#         green = int(255 * amplitude_scaled)  # Bright green for cyan
+#         blue = int(255 * amplitude_scaled)  # Blue stays strong
+
+#     # Return the color in hex format
+#     return f'#{red:02x}{green:02x}{blue:02x}'
+
+# rainbow effect
+def get_gradient_color(amplitude, index):
+    amplitude_scaled = min(1, amplitude)  # Clamp amplitude to a maximum of 1
+    num_colors = 256  # Define number of colors in the rainbow spectrum
+
+    # Generate RGB values for the rainbow gradient using HSV color wheel
+    hue = (index / 30) % 1.0  # Distribute hues across the bars (0-30)
+    saturation = 1.0  # Full saturation for vibrancy
+    value = max(0.5, amplitude_scaled)  # Value proportional to amplitude (min brightness 50%)
+
+    r, g, b = hsv_to_rgb(hue, saturation, value)  # Convert HSV to RGB
+    return f'#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}'
+
+def hsv_to_rgb(h, s, v):
+    i = int(h * 6)  # Determine sector of the HSV color space
+    f = (h * 6) - i  # Fractional part
+    p = v * (1 - s)
+    q = v * (1 - f * s)
+    t = v * (1 - (1 - f) * s)
+    i %= 6
+    if i == 0:
+        r, g, b = v, t, p
+    elif i == 1:
+        r, g, b = q, v, p
+    elif i == 2:
+        r, g, b = p, v, t
+    elif i == 3:
+        r, g, b = p, q, v
+    elif i == 4:
+        r, g, b = t, p, v
+    elif i == 5:
+        r, g, b = v, p, q
+    return r, g, b
+
+# def update_slider_position(slider):
+#     if playing_window:  # Check if the playing window is open
+#         slider_position = pygame.mixer.music.get_pos() / 1000  # Get current playback position in seconds
+#         slider.set(slider_position)  # Update the slider position
+#         playing_window.after(1000, update_slider_position, slider)  # Update every second
+
+# Function to seek the song based on slider position
+# def on_slider_move(val):
+#     if pygame.mixer.music.get_busy():
+#         # Convert slider value to a float and set the playback position
+#         pygame.mixer.music.set_pos(float(val))
+
+# Open play window for the selected song
+def play_selected_song():
+    # Listbox me se selected song ka index lena
+    selected_index = song_list.curselection()
+    if selected_index:  # Check karna ke kya koi song select kiya gaya hai
+        # Selected song ka information lena
+        song_info = song_list.get(selected_index[0])  # Listbox se song info lena
+        # Song ka naam lena, time info ko alag karna
+        song_name = song_info.split("  |")[0]  
+        # Song ka full path generate karna
+        song_path = os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs/', song_name)
+        try:
+            # Pygame mixer se song load aur then play
+            pygame.mixer.music.load(song_path)
+            pygame.mixer.music.play()
+        except pygame.error as e:
+            print(f"Error loading song: {e}")
+    else:
+        messagebox.showwarning("Warning", "Please select a song to play!")
+
+playing_window = None 
 # Function to open the song playing window
 def open_playing_window(song_index):
+    # Agar ek window pehle se open hai, toh use destroy kar do
+    global playing_window
+    if playing_window:
+        playing_window.destroy()
+
+    # Agar song_index invalid ho, toh function se exit
     if song_index < 0 or song_index >= song_list.size():
-        return  # Exit if the index is out of bounds
-    
+        return
+
     playing_window = tk.Toplevel(root)
     playing_window.title("Playing")
-    playing_window.geometry("660x550")
-    playing_window.config(bg='#2e2e2e')  # Dark background
+    playing_window.geometry("710x450")
+    playing_window.config(bg='#2e2e2e')  # Dark theme background
 
-    current_song = song_list.get(song_index).split('  |  ')[0]  # Get the currently selected song name
+    # Current song ka info aur path
+    song_info = song_list.get(song_index)
+    current_song = song_info.split('  |  ')[0]  # Sirf song name lena
+    song_path = os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs/', current_song)
+
+    # Current song ka label update karna
     current_song_label.config(text=f"Now Playing: {current_song}")
+
+    # Visualization ke liye canvas create karna
+    visualization_canvas = tk.Canvas(playing_window, width=700, height=200, bg="black", highlightthickness=0)
+    visualization_canvas.pack(pady=20)
+
+    # Background image load karna (agar available hai)
+    background_image = None
+    if os.path.exists(ALBUM_ART_PATH):
+        try:
+            # Image resize aur canvas ke liye load
+            background_image = Image.open(ALBUM_ART_PATH).resize((700, 300), Image.LANCZOS)
+            background_image = ImageTk.PhotoImage(background_image)
+        except Exception as e:
+            print(f"Error loading image: {e}")
+    else:
+        print(f"Image not found at {ALBUM_ART_PATH}")
+
+    # Canvas me image set karna, ya default black background use karna
+    if background_image:
+        visualization_canvas.create_image(0, 0, anchor=tk.NW, image=background_image)
+        visualization_canvas.image = background_image  # Garbage collection prevent karne ke liye
+    else:
+        visualization_canvas.create_rectangle(0, 0, 700, 200, fill="black")
+
+    # Beat visualization thread shuru karna
+    threading.Thread(target=visualize_beats, args=(visualization_canvas, song_path, background_image), daemon=True).start()
 
     # Function to handle window close
     def on_close():
@@ -103,133 +330,160 @@ def open_playing_window(song_index):
     # Bind the on_close function to the window close event
     playing_window.protocol("WM_DELETE_WINDOW", on_close)
 
-
     # Initialize the current song index for next/previous functionality
     current_song_index = song_index
-
-    # Function to play the song in the new window
-    def play_song():
-        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', current_song))
-        pygame.mixer.music.play(loops=0)
-
-    # Function to stop the current song
-    def stop_song():
-        pygame.mixer.music.stop()
-
-    # Pause and unpause functionality
-    paused = False
-    def pause_song():
-        nonlocal paused
-        if paused:
-            pygame.mixer.music.unpause()
-            paused = False
-        else:
-            pygame.mixer.music.pause()
-            paused = True
-
-    # Function to play the next song
-    def play_next_song():
-        nonlocal current_song_index
-        current_song_index += 1
-        if current_song_index >= song_list.size():
-            # Agr first song hai tu last pr chly jyen
-            current_song_index = 0  
-        next_song = song_list.get(current_song_index).split('  |  ')[0]
-        current_song_label.config(text=f"Now Playing: {next_song}")
-        song_name_label.config(text=next_song)
-        song_list.selection_clear(0, tk.END)  # Clear previous selection
-        song_list.selection_set(current_song_index)  # Set new selection
-        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', next_song))
-        pygame.mixer.music.play(loops=0)
-
-    # Function to play the previous song
-    def play_previous_song():
-        nonlocal current_song_index
-        current_song_index -= 1
-        if current_song_index < 0:
-            # Agr last song hai tu first pr chly jyen
-            current_song_index = song_list.size()-1  
-        previous_song = song_list.get(current_song_index).split('  |  ')[0]
-        current_song_label.config(text=f"Now Playing: {previous_song}")
-        song_name_label.config(text=previous_song)
-        song_list.selection_clear(0, tk.END)  # Clear previous selection
-        song_list.selection_set(current_song_index)  # Set new selection
-        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', previous_song))
-        pygame.mixer.music.play(loops=0)
-
-    # Album art container
-    album_art_frame = tk.Frame(playing_window, bg='black', width=400, height=200)
-    album_art_frame.pack(pady=10, padx=20, fill=tk.X)
-
-    # Set your fixed album art path
-    fixed_album_art_path = 'E:/JUW/Sec sem/Data Structures/Project/Tune Flow/images.png'  # Update path as needed
-
-    # Check if the file exists before loading
-    if os.path.exists(fixed_album_art_path):
-        try:
-            # Load and resize image using Image.LANCZOS
-            img = Image.open(fixed_album_art_path)
-            img = img.resize((250, 250), Image.LANCZOS)  # Increased image size
-            album_art_image = ImageTk.PhotoImage(img)
-            
-            # Display the image in the container
-            album_art_label = tk.Label(album_art_frame, image=album_art_image, bg='black')  # Dark background for image
-            album_art_label.image = album_art_image  # Keep a reference to avoid garbage collection
-            album_art_label.pack(expand=True, fill=tk.BOTH)
-        
-        except Exception as e:
-            messagebox.showerror("Image Error", f"Could not load image: {e}")
-    else:
-        messagebox.showerror("File Not Found", f"The file '{fixed_album_art_path}' was not found.")
 
     # Label for song name
     song_name_label = tk.Label(playing_window, text=current_song, bg='#2e2e2e', fg='white', font=font_style)
     song_name_label.pack(pady=10)
 
-    # Frame for playback buttons
-    button_frame = tk.Frame(playing_window, bg='#2e2e2e', padx=20, pady=20)
-    button_frame.pack(pady=20, fill=tk.X)
+    # Function to play the song
+    def play_song(song_path):
+        try:
+            pygame.mixer.music.load(song_path)  # Load the song
+            pygame.mixer.music.play(loops=0)  # Play the song
+            print(f"Now playing: {song_path}")
+        except Exception as e:
+            print(f"Error playing song: {e}")
 
-    # Create buttons for play, pause, and stop functions
-    button_color = '#007bff'  # Blue button color
-    button_width = 20  # Increased button width
-    button_height = 2  # Increased button height
+    def stop_song():
+        pygame.mixer.music.stop()
+        playing_window.destroy()
 
-    play_button = tk.Button(button_frame, text='Play', command=play_song, bg=button_color, fg='white', width=button_width, height=button_height, font=font_style)
-    pause_button = tk.Button(button_frame, text='Pause', command=pause_song, bg=button_color, fg='white', width=button_width, height=button_height, font=font_style)
-    stop_button = tk.Button(button_frame, text='Stop', command=stop_song, bg=button_color, fg='white', width=button_width, height=button_height, font=font_style)
+    def pause_song():
+        global is_paused
+        pygame.mixer.music.pause()
+        is_paused = True  # Set playback state to paused
 
-    # Arrange the first three buttons in the frame in one line
-    play_button.grid(row=0, column=0, padx=10, pady=5)
-    pause_button.grid(row=0, column=1, padx=10, pady=5)
-    stop_button.grid(row=0, column=2, padx=10, pady=5)
+    def resume_song():
+        global is_paused
+        pygame.mixer.music.unpause()
+        is_paused = False  # Set playback state to playing
 
-    # Create a frame for next and previous buttons
-    navigation_frame = tk.Frame(playing_window, bg='#2e2e2e')
-    navigation_frame.pack(pady=10)
+    def update_volume(val):
+        pygame.mixer.music.set_volume(float(val))  # Set volume level
 
-    # Create buttons for next and previous functions
-    next_button = tk.Button(navigation_frame, text='Next', command=play_next_song, bg=button_color, fg='white', width=button_width, height=button_height, font=font_style)
-    previous_button = tk.Button(navigation_frame, text='Previous', command=play_previous_song, bg=button_color, fg='white', width=button_width, height=button_height, font=font_style)
+    def play_next_song():
+        # agr song list empty hai tu return krdi ese hi
+        if song_list.size() == 0:
+            return
 
-    # Arrange the next and previous buttons in the navigation frame, centered
-    next_button.pack(side=tk.LEFT, padx=10)
-    previous_button.pack(side=tk.LEFT, padx=10)
+        nonlocal current_song_index  # Local variable ko access karne ke liye
+        current_song_index += 1  # Current song index ko increment karna
+        if current_song_index >= song_list.size():  # Agar list ke last song ke baad chala jaye
+            current_song_index = 0  # Index ko first song pe reset kar do
+
+        # Agle song ka naam listbox se lena
+        next_song = song_list.get(current_song_index).split('  |  ')[0]
+        # UI labels update karna
+        current_song_label.config(text=f"Now Playing: {next_song}")  # "Now Playing" ka label
+        song_name_label.config(text=next_song)  # Song name label
+        
+        # Previous selection ko clear karna aur new selection set karna
+        song_list.selection_clear(0, tk.END)
+        song_list.selection_set(current_song_index)
+
+        # Pygame mixer se next song ko load aur play karna
+        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', next_song))
+        pygame.mixer.music.play(loops=0)  # Agle song ko play karna bina kisi loop ke
+
+    def play_previous_song():
+        nonlocal current_song_index  # Outer function ka current_song_index variable use karna
+        current_song_index -= 1  # Current song index ko decrement karna (ek step peeche)
+        
+        # Agar current song first song pe ho, toh last song pe chala jao
+        if current_song_index < 0:
+            current_song_index = song_list.size()-1  # Last song ka index set karna
+        
+        # Previous song ka naam fetch karna aur usay play karna
+        previous_song = song_list.get(current_song_index).split('  |  ')[0]
+        
+        # UI labels update karna
+        current_song_label.config(text=f"Now Playing: {previous_song}")  # "Now Playing" ka label update karna
+        song_name_label.config(text=previous_song)  # Song name label ko update karna
+        
+        # Previous selection ko clear karna aur nayi selection set karna
+        song_list.selection_clear(0, tk.END)
+        song_list.selection_set(current_song_index)
+
+        # Pygame mixer se previous song ko load aur play karna
+        pygame.mixer.music.load(os.path.join('E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs', previous_song))
+        pygame.mixer.music.play(loops=0)  # Song ko play karna, aur koi loop nahi hoga
+
+    # Frame for playback buttons (pack after the image to avoid overlap)
+    button_frame = tk.Frame(playing_window, bg='#2b2b2b')
+    button_frame.pack(pady=10, fill=tk.X, padx=20)  # Ensure the frame fills horizontally
+
+    # Pause, Stop, Resume buttons
+    # tk.Button(button_frame, text="Pause", command=pause_song, bg='#ff4d4d', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
+    # tk.Button(button_frame, text="Stop", command=stop_song, bg='#ff4d4d', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
+    # tk.Button(button_frame, text="Resume", command=resume_song, bg='#ff4d4d', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
+    pause_button = tk.Button(button_frame, text="Pause", command=pause_song)
+    style_button(pause_button, color="#ff4d4d", hover_color="#cc0000")  # Red theme
+    pause_button.pack(side=tk.LEFT, padx=25)
+
+    stop_button = tk.Button(button_frame, text="Close", command=stop_song)
+    style_button(stop_button, color="#ff4d4d", hover_color="#cc0000")  # Red theme
+    stop_button.pack(side=tk.LEFT, padx=20)
+
+    resume_button = tk.Button(button_frame, text="Resume", command=resume_song)
+    style_button(resume_button, color="#ff4d4d", hover_color="#cc0000")  # Red theme
+    resume_button.pack(side=tk.LEFT, padx=20)
+
+    # Next and Previous buttons
+    # tk.Button(button_frame, text="Next", command=play_next_song, bg='#4CAF50', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
+    # tk.Button(button_frame, text="Previous", command=play_previous_song, bg='#4CAF50', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
+    # Next Button
+    next_button = tk.Button(button_frame, text="Next", command=play_next_song)
+    style_button(next_button, color="#ff4d4d", hover_color="#cc0000")  # Green theme
+    next_button.pack(side=tk.LEFT, padx=20)
+    # next_img = Image.open("next_btn.png").resize((50, 50))  # Resize if needed
+    # next_btn_image = ImageTk.PhotoImage(next_img)
+
+    # # Create the Next button with the image
+    # next_button = tk.Button(button_frame, image=next_btn_image, command=play_next_song, borderwidth=0)
+    # next_button.pack(side=tk.LEFT, padx=10)
+
+    # Previous Button
+    previous_button = tk.Button(button_frame, text="Previous", command=play_previous_song)
+    style_button(previous_button, color="#ff4d4d", hover_color="#cc0000")  # Green theme
+    previous_button.pack(side=tk.LEFT, padx=20)
+
+    # # Volume control
+    # volume_slider = tk.Scale(playing_window, from_=0, to=1, orient="horizontal", resolution=0.01, bg='#2b2b2b', fg="white", label="Volume")
+    # volume_slider.set(0.5)  # Default volume at 50%
+    # volume_slider.pack(pady=10)
+    # volume_slider.config(command=update_volume)
+    # Volume slider
+    volume_slider = tk.Scale(
+        playing_window,
+        from_=0,
+        to=1,
+        orient="horizontal",
+        resolution=0.01,
+        bg="#2b2b2b",
+        fg="white",
+        label="Volume",
+        highlightthickness=0
+    )
+    volume_slider.set(0.5)  # Default volume at 50%
+    volume_slider.pack(pady=10)
+
+    # Link the slider to update volume
+    volume_slider.config(command=update_volume)
+
+    # Initialize song for playback (Make sure the song path is loaded)
+    play_song(song_path)
 
 # Bind the double-click event to the song list
 song_list.bind('<Double-1>', lambda event: open_playing_window(song_list.curselection()[0]))
 
-# Frame for buttons to add and remove songs
-button_frame = tk.Frame(root, bg='#2e2e2e')
-button_frame.pack(pady=10)
+# Control buttons for main window
+control_frame = tk.Frame(root, bg='#2b2b2b')
+control_frame.pack(pady=10)
 
-# Add and remove song buttons with increased size
-add_song_button = tk.Button(button_frame, text='Add Song', command=add_song, bg='#007bff', fg='white', width=15, height=2, font=font_style)
-remove_song_button = tk.Button(button_frame, text='Remove Song', command=remove_song, bg='#007bff', fg='white', width=15, height=2, font=font_style)
+tk.Button(control_frame, text="Add Song", command=add_song, bg='#4CAF50', fg='white', font=font_style).pack(side=tk.LEFT, padx=10)
+tk.Button(control_frame, text="Remove Song", command=remove_song, bg='#f44336', fg='white', font=font_style).pack(side=tk.LEFT, padx=10)
 
-# Arrange the add and remove buttons in the frame
-add_song_button.pack(side=tk.LEFT, padx=5)
-remove_song_button.pack(side=tk.LEFT, padx=5)
-
-# Run the application
+# Run the app
 root.mainloop()
