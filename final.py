@@ -7,8 +7,6 @@ from PIL import Image, ImageTk
 import numpy as np
 import threading
 from pydub import AudioSegment
-import time
-import random
 
 # Initialize the pygame mixer
 pygame.mixer.init()
@@ -179,32 +177,6 @@ def visualize_beats(canvas, song_path, background_image):
     except Exception as e:
         print(f"Visualization error: {e}")  # Agar error aaye toh print karna
 
-# # Function to calculate gradient colors
-# def get_gradient_color(amplitude, index):
-#     # Scale the amplitude (0 to 1 range)
-#     amplitude_scaled = min(1, amplitude)  # Clamp the amplitude to a maximum of 1
-
-#     # Electric Blue
-#     if index < 10:  # Start of the gradient
-#         red = int(0)  # No red at the start
-#         green = int(50 + (150 * amplitude_scaled))  # Vivid green for blue tone
-#         blue = int(255 * amplitude_scaled)  # Strong blue intensity
-
-#     # Transition to Vibrant Magenta
-#     elif index < 20:  # Transition phase
-#         red = int(255 * amplitude_scaled)  # Bright red emerges
-#         green = int(0)  # Green reduces
-#         blue = int(255 * amplitude_scaled)  # Blue remains vibrant
-
-#     # Magenta to Cyan Tint
-#     else:  # End of the gradient
-#         red = int(0)  # Red fades away
-#         green = int(255 * amplitude_scaled)  # Bright green for cyan
-#         blue = int(255 * amplitude_scaled)  # Blue stays strong
-
-#     # Return the color in hex format
-#     return f'#{red:02x}{green:02x}{blue:02x}'
-
 # rainbow effect
 def get_gradient_color(amplitude, index):
     amplitude_scaled = min(1, amplitude)  # Clamp amplitude to a maximum of 1
@@ -238,18 +210,6 @@ def hsv_to_rgb(h, s, v):
     elif i == 5:
         r, g, b = v, p, q
     return r, g, b
-
-# def update_slider_position(slider):
-#     if playing_window:  # Check if the playing window is open
-#         slider_position = pygame.mixer.music.get_pos() / 1000  # Get current playback position in seconds
-#         slider.set(slider_position)  # Update the slider position
-#         playing_window.after(1000, update_slider_position, slider)  # Update every second
-
-# Function to seek the song based on slider position
-# def on_slider_move(val):
-#     if pygame.mixer.music.get_busy():
-#         # Convert slider value to a float and set the playback position
-#         pygame.mixer.music.set_pos(float(val))
 
 # Open play window for the selected song
 def play_selected_song():
@@ -414,10 +374,6 @@ def open_playing_window(song_index):
     button_frame = tk.Frame(playing_window, bg='#2b2b2b')
     button_frame.pack(pady=10, fill=tk.X, padx=20)  # Ensure the frame fills horizontally
 
-    # Pause, Stop, Resume buttons
-    # tk.Button(button_frame, text="Pause", command=pause_song, bg='#ff4d4d', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
-    # tk.Button(button_frame, text="Stop", command=stop_song, bg='#ff4d4d', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
-    # tk.Button(button_frame, text="Resume", command=resume_song, bg='#ff4d4d', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
     pause_button = tk.Button(button_frame, text="Pause", command=pause_song)
     style_button(pause_button, color="#ff4d4d", hover_color="#cc0000")  # Red theme
     pause_button.pack(side=tk.LEFT, padx=25)
@@ -430,31 +386,16 @@ def open_playing_window(song_index):
     style_button(resume_button, color="#ff4d4d", hover_color="#cc0000")  # Red theme
     resume_button.pack(side=tk.LEFT, padx=20)
 
-    # Next and Previous buttons
-    # tk.Button(button_frame, text="Next", command=play_next_song, bg='#4CAF50', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
-    # tk.Button(button_frame, text="Previous", command=play_previous_song, bg='#4CAF50', fg='white', font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
     # Next Button
     next_button = tk.Button(button_frame, text="Next", command=play_next_song)
     style_button(next_button, color="#ff4d4d", hover_color="#cc0000")  # Green theme
     next_button.pack(side=tk.LEFT, padx=20)
-    # next_img = Image.open("next_btn.png").resize((50, 50))  # Resize if needed
-    # next_btn_image = ImageTk.PhotoImage(next_img)
-
-    # # Create the Next button with the image
-    # next_button = tk.Button(button_frame, image=next_btn_image, command=play_next_song, borderwidth=0)
-    # next_button.pack(side=tk.LEFT, padx=10)
 
     # Previous Button
     previous_button = tk.Button(button_frame, text="Previous", command=play_previous_song)
     style_button(previous_button, color="#ff4d4d", hover_color="#cc0000")  # Green theme
     previous_button.pack(side=tk.LEFT, padx=20)
 
-    # # Volume control
-    # volume_slider = tk.Scale(playing_window, from_=0, to=1, orient="horizontal", resolution=0.01, bg='#2b2b2b', fg="white", label="Volume")
-    # volume_slider.set(0.5)  # Default volume at 50%
-    # volume_slider.pack(pady=10)
-    # volume_slider.config(command=update_volume)
-    # Volume slider
     volume_slider = tk.Scale(
         playing_window,
         from_=0,
@@ -464,13 +405,11 @@ def open_playing_window(song_index):
         bg="#2b2b2b",
         fg="white",
         label="Volume",
-        highlightthickness=0
+        highlightthickness=0,
+        command= update_volume
     )
     volume_slider.set(0.5)  # Default volume at 50%
     volume_slider.pack(pady=10)
-
-    # Link the slider to update volume
-    volume_slider.config(command=update_volume)
 
     # Initialize song for playback (Make sure the song path is loaded)
     play_song(song_path)
