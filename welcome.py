@@ -141,7 +141,7 @@ from PIL import Image, ImageTk, ImageEnhance, ImageDraw
 
 def show_welcome_page(root, switch_to_main_screen):
     LOGO_IMG = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\main_logo.jpg"
-    BG_IMG = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\main_img_2.jpg"
+    BG_IMG = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\main_img_7.jpg"
 
     # Create a Canvas widget for the background and elements
     canvas = tk.Canvas(root, width=800, height=600, bg="black")
@@ -240,7 +240,7 @@ def show_welcome_page(root, switch_to_main_screen):
             if message_index < len(welcome_message):
                 current_message = welcome_message[:message_index + 1]
                 canvas.delete("welcome_text")
-                canvas.create_text(400, 320, text=current_message, font=("Freestyle Script", 30, "bold"), fill="Yellow", tags="welcome_text")
+                canvas.create_text(400, 320, text=current_message, font=("Freestyle Script", 30, "bold"), fill="Sky Blue", tags="welcome_text")
                 message_index += 1
                 canvas.after(100, display_message)  # Delay between each character
             else:

@@ -76,7 +76,7 @@ def save_song_list():
         with open(song_list_file, 'w') as file:
             for song_name in song_names:
                 file.write(song_name + '\n')
-                
+
 # Function to load the saved song list from the file
 
 def load_song_list():
@@ -143,36 +143,6 @@ def add_song_to_canvas(song_name):
     style_button(delete_button, color="#ff4d4d", hover_color="#cc0000")
     delete_button.pack(side=tk.LEFT, padx=5)  # Pack to the right
 
-def remove_song(song_name):
-    # Find the song frame that matches the song name and destroy it
-    for song_frame in song_frames_container.winfo_children():
-        song_label = song_frame.winfo_children()[1]  # Get the song label
-        if song_label.cget("text") == song_name:
-            song_frame.destroy()  # Remove the song frame from the canvas
-            break
-
-    # Reset "Now Playing" label if the song being removed is currently playing
-    if current_song_label.cget("text").endswith(song_name):
-        current_song_label.config(text="Now Playing: None")
-
-    # Show success message
-    messagebox.showinfo("Removed", f"'{song_name}' removed from the list.")
-
-    # Remove song from the file
-    update_song_list_file()
-
-def update_song_list_file():
-    # Rebuild the song list from the canvas
-    song_names = []
-    for song_frame in song_frames_container.winfo_children():
-        song_label = song_frame.winfo_children()[1]  # Get the song label
-        song_names.append(song_label.cget("text"))
-
-    # Save updated list to the file
-    with open(song_list_file, 'w') as file:
-        for song_name in song_names:
-            file.write(song_name + '\n')
-
 
 # Function to handle the play button click
 def on_play_button_click(song_name):
@@ -217,11 +187,6 @@ def play_selected_song(song_info):
         print(f"Error loading song: {e}")
         messagebox.showerror("Error", f"Could not play the song: {song_name}\nError: {e}")
 
-# Function to update date and time label
-def update_date_time():
-    now = datetime.now()
-    return now.strftime("%Y-%m-%d %H:%M:%S")
-
 # Function to add songs to the list
 def add_song():
     songs = filedialog.askopenfilenames(
@@ -234,8 +199,6 @@ def add_song():
     if songs:
         for song in songs:
             song_name = os.path.basename(song)  # Get the file name, not the path
-            song_add_time = update_date_time()  # Get current date and time
-            song_text = f"{song_name}  |  Added on: {song_add_time}"
 
             # Add song to canvas
             add_song_to_canvas(song_name)
@@ -261,6 +224,8 @@ def remove_song(song_name):
 
     # Show success message
     messagebox.showinfo("Removed", f"'{song_name}' removed from the list.")
+
+    # Remove song from the file
     save_song_list()
 
 # Global variable to track playback state
@@ -277,7 +242,7 @@ def visualize_beats(canvas, song_path, background_image):
         chunk_size = 1024  # Ek chunk ka size (samples ka)
 
         # Bar visualization ke parameters
-        num_bars = canvas.winfo_width() // 20  # Canvas ki width ke mutabiq number of bars
+        num_bars = canvas.winfo_width() // 10 # Canvas ki width ke mutabiq number of bars
         bar_height = canvas.winfo_height()  # Canvas ki height
         max_amplitude = np.max(np.abs(samples))  # Max amplitude calculate karna
         max_bar_height = 800  # Ek bar ki max height (pixels me)
@@ -360,7 +325,6 @@ def hsv_to_rgb(h, s, v):
         r, g, b = v, p, q
     return r, g, b
 
-
 playing_window = None 
 # Function to open the song playing window
 def open_playing_window(song_index):
@@ -420,14 +384,10 @@ def open_playing_window(song_index):
 
     # Function to handle window close
     def on_close():
-        current_song_label.config(text=f"Now Playing: None")
-        song_frame.config(bg='#1e1e1e')
-        pygame.mixer.music.stop()  # Stop the music
-        playing_window.destroy()  # Close the window
+        stop_song()
 
     # Bind the on_close function to the window close event
     playing_window.protocol("WM_DELETE_WINDOW", on_close)
-
 
     # Label for song name
     song_name_label = tk.Label(playing_window, text=song_name, bg='#2e2e2e', fg='white', font=font_style)
@@ -544,7 +504,6 @@ def open_playing_window(song_index):
                 song_frame.config(bg='#4CAF50')  # Highlight the song button for the selected song
             else:
                 song_frame.config(bg='#1e1e1e')  # Reset background color for others
-
 
     # Frame for playback buttons (pack after the image to avoid overlap)
     button_frame = tk.Frame(playing_window, bg='#2b2b2b')
