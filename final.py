@@ -7,6 +7,9 @@ from PIL import Image, ImageTk
 import numpy as np
 import threading
 from pydub import AudioSegment
+import winsound
+from PIL import Image, ImageTk, ImageEnhance, ImageDraw
+from welcome import show_welcome_page
 
 # Initialize the pygame mixer
 pygame.mixer.init()
@@ -18,7 +21,9 @@ ALBUM_ART_PATH = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\img.jpg"
 root = tk.Tk()
 root.title('Music Player')
 root.geometry('600x600') # widh X height 
+# root.config(bg='#2b2b2b')
 root.config(bg='#2b2b2b')
+
 
 # Set the font for the entire application
 font_style = ("Arial", 12)
@@ -50,7 +55,7 @@ def load_song_list():
 load_song_list()
 
 # Current song label
-current_song_label = tk.Label(root, text="Now Playing: None", bg='#2b2b2b', fg='white', font=("Arial", 14))
+current_song_label = tk.Label(root, text="Now Playing: None", bg='#1e1e1e', fg='white', font=("Helvetica", 14))
 current_song_label.pack(pady=10)
 
 # Function to update date and time label
