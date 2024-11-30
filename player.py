@@ -17,7 +17,7 @@ pygame.mixer.init()
 
 # Default Paths
 ALBUM_ART_PATH = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\img.jpg"  
-SONG_LOGO = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\logo2.jpg"
+SONG_LOGO = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\logo.jpg"
 default_song_path = "E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs/"
 
 # Initialize the main app window
