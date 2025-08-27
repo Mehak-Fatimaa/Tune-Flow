@@ -27,6 +27,10 @@ TuneFlow/
 │ ├── main_img.jpg  
 │ ├── logo.jpg  
 │ └── img.jpg  
+│ └── load_img.png  
+│ └── welcome_img.png  
+│ └── song_img.png  
+│ └── play_img.png  
 │── songs/  
 │ └── (your mp3 files here)  
 │── welcome.py  
@@ -50,8 +54,11 @@ python main.py
 - **Volume Slider** → Adjust the playback volume.  
 
 ## 📸 Screenshots
-![Welcome Screen](images/main_img.jpg)
-![Player UI](demo.png)
+![Load Screen](images/load_img.png)
+![Welcome Screen](images/welcome_img.png)
+![Songs Screen](images/song_img.png)
+![Play Screen](images/play_img.png)
+
 
 ## 🤝 Contributing
 Pull requests are welcome! For major changes, please open an issue first  
