@@ -3,8 +3,8 @@ import winsound
 from PIL import Image, ImageTk, ImageEnhance, ImageDraw
 
 def show_welcome_page(root, switch_to_main_screen):
-    LOGO_IMG = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\main_logo.jpg"
-    BG_IMG = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\main_img.jpg"
+    LOGO_IMG = "images/main_logo.jpg"
+    BG_IMG = "images/main_img.jpg"
 
     # Create a Canvas widget for the background and elements
     canvas = tk.Canvas(root, width=800, height=600, bg="black")

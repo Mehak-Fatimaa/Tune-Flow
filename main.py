@@ -16,9 +16,9 @@ from welcome import show_welcome_page
 pygame.mixer.init()
 
 # Default Paths
-ALBUM_ART_PATH = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\img.jpg"  
-SONG_LOGO = r"E:\JUW\Sec sem\Data Structures\Project\Tune Flow\images\logo.jpg"
-default_song_path = "E:/JUW/Sec sem/Data Structures/Project/Tune Flow/songs/"
+ALBUM_ART_PATH = "images/img.jpg"  
+SONG_LOGO = "images/logo.jpg"
+default_song_path = "songs/"
 
 # Initialize the main app window
 root = tk.Tk()
