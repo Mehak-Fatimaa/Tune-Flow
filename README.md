@@ -20,23 +20,18 @@ Make sure you have Python **3.8+** installed.
 Install the required libraries:  
 pip install pygame pillow numpy pydub
 
-
----
-
-### 🟢 Part 4: Project Structure
-```markdown
 ## 📂 Project Structure  
-TuneFlow/
-│── images/
-│ ├── main_logo.jpg
-│ ├── main_img.jpg
-│ ├── logo.jpg
-│ └── img.jpg
-│── songs/
-│ └── (your mp3 files here)
-│── welcome.py
-│── main.py
-│── song_list.txt
+TuneFlow/  
+│── images/   
+│ ├── main_logo.jpg  
+│ ├── main_img.jpg  
+│ ├── logo.jpg  
+│ └── img.jpg  
+│── songs/  
+│ └── (your mp3 files here)  
+│── welcome.py  
+│── main.py  
+│── song_list.txt  
 │── README.md
 
 ## ▶️ How to Run  
@@ -44,9 +39,6 @@ TuneFlow/
 2. Install the required dependencies.  
 3. Run the application:  
 python main.py
----
-
-### 🟢 Part 6: Controls
 
 ## 🎮 Controls  
 - **Add Song** → Select MP3 files from file dialog.  
@@ -57,4 +49,10 @@ python main.py
 - **Close** → Stop music and close the player.  
 - **Volume Slider** → Adjust the playback volume.  
 
+## 📸 Screenshots
+![Welcome Screen](images/main_img.jpg)
+![Player UI](demo.png)
 
+## 🤝 Contributing
+Pull requests are welcome! For major changes, please open an issue first  
+to discuss what you would like to change.
